@@ -1,4 +1,4 @@
-import { Ship } from './index.js';
+import { Ship } from './ship.js';
 
 describe('Ship Class - Isolation Testing', () => {
   
