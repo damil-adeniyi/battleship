@@ -9,20 +9,35 @@
     
     <h1>Battleship</h1>
     
-    <div id="game-container">
+    <div id="mode-selector" style="margin-bottom: 15px;">
+        <label for="game-mode">Select Mode: </label>
+        <select id="game-mode" style="padding: 5px;">
+            <option value="pvp">2-Player (Pass & Play)</option>
+            <option value="pve">Player vs Computer</option>
+        </select>
+        <button id="confirm-mode" style="padding: 5px 10px; margin-left: 5px; cursor: pointer;">Set Mode</button>
+    </div>
+
+    <div id="game-container" style="display: none;">
         <div class="board-section">
-            <h2>Your Board</h2>
+            <h2 id="board-1-title">Your Board</h2>
             <div id="player-board" class="board"></div>
+            
+            <div id="ship-dock" style="margin-top: 15px;">
+                <h3 id="dock-title">Your Fleet (Drag to Board)</h3>
+                <div id="ship-list" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;"></div>
+                <button id="rotate-btn" style="margin-top: 10px; padding: 5px 10px; cursor: pointer;">Orientation: Horizontal</button>
+            </div>
         </div>
         
         <div class="board-section">
-            <h2>Computer Board</h2>
+            <h2 id="board-2-title">Computer Board</h2>
             <div id="computer-board" class="board"></div>
         </div>
     </div>
 
     <div id="message-container">
-        <p id="game-status">Arrange your ships or click "Randomize Ships", then click "Start Battle!"</p>
+        <p id="game-status">Select a game mode to begin.</p>
     </div>
 
 </body>
