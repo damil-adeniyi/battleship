@@ -56,6 +56,10 @@ body {
 }
 
 #message-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     margin-top: 20px;
     font-size: 18px;
     font-weight: bold;

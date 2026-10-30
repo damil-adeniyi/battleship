@@ -5,26 +5,43 @@ import { Ship } from './ship.js';
 const player = new Player('real');
 const computer = new Player('computer');
 
-// For now, populate with predetermined ships (e.g., length 3 and 2)
+let gameStarted = false;
+
+// Function to setup predetermined or random ships for a player board
+function placeRandomShips(targetPlayer) {
+    targetPlayer.gameboard.ships = [];
+    targetPlayer.gameboard.board.clear();
+
+    const shipConfigs = [
+        { name: 'Destroyer', length: 3 },
+        { name: 'Patroller', length: 2 },
+    ];
+
+    shipConfigs.forEach(({ name, length }) => {
+        let placed = false;
+        while (!placed) {
+            const x = Math.floor(Math.random() * 10);
+            const y = Math.floor(Math.random() * 10);
+            const orientation = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+
+            // Basic boundary check before placing
+            if (orientation === 'horizontal' && x + length <= 10) {
+                const ship = new Ship(name, length);
+                targetPlayer.gameboard.placeShip(ship, [x, y], orientation);
+                placed = true;
+            } else if (orientation === 'vertical' && y + length <= 10) {
+                const ship = new Ship(name, length);
+                targetPlayer.gameboard.placeShip(ship, [x, y], orientation);
+                placed = true;
+            }
+        }
+    });
+}
+
 function setupGame() {
-    const playerShip1 = new Ship('Destroyer', 3);
-    const playerShip2 = new Ship('Destroyer', 3);
-    const playerShip3 = new Ship('Patroller', 2);
-    const playerShip4 = new Ship('Patroller', 2);
-    player.gameboard.placeShip(playerShip1, [0, 0], 'horizontal');
-    player.gameboard.placeShip(playerShip2, [0, 3], 'vertical');
-    player.gameboard.placeShip(playerShip3, [4, 6], 'horizontal');
-    player.gameboard.placeShip(playerShip4, [6, 0], 'vertical');
-
-    const compShip1 = new Ship('Destroyer', 3);
-    const compShip2 = new Ship('Destroyer', 3);
-    const compShip3 = new Ship('Patroller', 2);
-    const compShip4 = new Ship('Patroller', 2);
-    computer.gameboard.placeShip(compShip1, [2, 3], 'horizontal');
-    computer.gameboard.placeShip(compShip2, [5, 5], 'vertical');
-    computer.gameboard.placeShip(compShip3, [0, 8], 'horizontal');
-    computer.gameboard.placeShip(compShip4, [8, 0], 'vertical');
-
+    // Initially randomize player and computer ships
+    placeRandomShips(player);
+    placeRandomShips(computer);
 }
 
 // Render a board onto a DOM element
@@ -41,7 +58,6 @@ function renderBoard(gameboard, boardElement, isEnemy = false) {
             const ship = gameboard.getShipAt([x, y]);
             const isMiss = gameboard.getMissedAttacks().some(([mx, my]) => mx === x && my === y);
 
-            // Check if this cell was hit
             const cellKey = `${x},${y}`;
             const boardMapCell = gameboard.board.get(cellKey);
             const isHit = boardMapCell ? boardMapCell.isHit : false;
@@ -53,12 +69,10 @@ function renderBoard(gameboard, boardElement, isEnemy = false) {
                 cell.classList.add('miss');
                 cell.textContent = '•';
             } else if (!isEnemy && ship) {
-                // Show player's own ships so they can see them
-                cell.classList.add('ship');
+                cell.classList.add('ship'); // Show player's own ships
             }
 
-            // Add click listener only to the enemy board
-            if (isEnemy) {
+            if (isEnemy && gameStarted) {
                 cell.addEventListener('click', () => handleCellClick(x, y));
             }
 
@@ -70,7 +84,7 @@ function renderBoard(gameboard, boardElement, isEnemy = false) {
 let gameOver = false;
 
 function handleCellClick(x, y) {
-    if (gameOver) return;
+    if (gameOver || !gameStarted) return;
 
     const cellKey = `${x},${y}`;
     const targetCell = computer.gameboard.board.get(cellKey);
@@ -84,7 +98,6 @@ function handleCellClick(x, y) {
     computer.gameboard.receiveAttack([x, y]);
     renderBoards();
 
-    // Check for player win condition
     if (computer.gameboard.allShipsSunk()) {
         gameOver = true;
         showWinScreen('You Win! All computer ships destroyed! 🎉', 'win');
@@ -95,7 +108,6 @@ function handleCellClick(x, y) {
     computer.computerPlay(player.gameboard);
     renderBoards();
 
-    // Check for computer win condition
     if (player.gameboard.allShipsSunk()) {
         gameOver = true;
         showWinScreen('Game Over! The computer sank all your ships. 🤖', 'lose');
@@ -103,18 +115,12 @@ function handleCellClick(x, y) {
     }
 }
 
-// Function to display a dedicated win/game-over screen overlay or banner
 function showWinScreen(message, resultType) {
-    // Update text status element if it exists
     const statusEl = document.getElementById('game-status');
-    if (statusEl) {
-        statusEl.textContent = message;
-    }
+    if (statusEl) statusEl.textContent = message;
 
-    // Prevent creating multiple overlays if clicked repeatedly
     if (document.getElementById('game-over-overlay')) return;
 
-    // Create a styled overlay modal container
     const overlay = document.createElement('div');
     overlay.id = 'game-over-overlay';
     overlay.style.position = 'fixed';
@@ -133,34 +139,24 @@ function showWinScreen(message, resultType) {
     modal.style.padding = '30px 40px';
     modal.style.borderRadius = '12px';
     modal.style.textAlign = 'center';
-    modal.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
-    modal.style.maxWidth = '400px';
 
     const heading = document.createElement('h2');
     heading.textContent = resultType === 'win' ? 'Victory! 🏆' : 'Defeat 💥';
     heading.style.color = resultType === 'win' ? '#2e7d32' : '#c62828';
-    heading.style.marginBottom = '15px';
-    heading.style.fontSize = '28px';
 
     const text = document.createElement('p');
     text.textContent = message;
-    text.style.fontSize = '16px';
-    text.style.color = '#333333';
-    text.style.marginBottom = '25px';
 
     const restartBtn = document.createElement('button');
     restartBtn.textContent = 'Play Again';
     restartBtn.style.padding = '10px 20px';
-    restartBtn.style.fontSize = '16px';
     restartBtn.style.backgroundColor = '#1976d2';
     restartBtn.style.color = '#ffffff';
     restartBtn.style.border = 'none';
     restartBtn.style.borderRadius = '6px';
     restartBtn.style.cursor = 'pointer';
     
-    restartBtn.addEventListener('click', () => {
-        window.location.reload(); // Simple page refresh to reset the game state
-    });
+    restartBtn.addEventListener('click', () => window.location.reload());
 
     modal.appendChild(heading);
     modal.appendChild(text);
@@ -176,5 +172,48 @@ function renderBoards() {
     renderBoard(player.gameboard, playerBoardEl, false);
     renderBoard(computer.gameboard, computerBoardEl, true);
 }
+
+// Add a control panel for ship placement UI controls
+function setupPlacementControls() {
+    const container = document.getElementById('message-container');
+    
+    const controlDiv = document.createElement('div');
+    controlDiv.style.marginTop = '10px';
+
+    const randomizeBtn = document.createElement('button');
+    randomizeBtn.textContent = 'Randomize Ships';
+    randomizeBtn.style.marginRight = '10px';
+    randomizeBtn.style.padding = '8px 15px';
+    randomizeBtn.style.cursor = 'pointer';
+
+    randomizeBtn.addEventListener('click', () => {
+        if (gameStarted) return;
+        placeRandomShips(player);
+        renderBoards();
+    });
+
+    const startBtn = document.createElement('button');
+    startBtn.textContent = 'Start Battle!';
+    startBtn.style.padding = '8px 15px';
+    startBtn.style.backgroundColor = '#2e7d32';
+    startBtn.style.color = '#white';
+    startBtn.style.cursor = 'pointer';
+
+    startBtn.addEventListener('click', () => {
+        gameStarted = true;
+        controlDiv.style.display = 'none';
+        document.getElementById('game-status').textContent = 'Game on! Click the Computer Board to attack.';
+        renderBoards();
+    });
+
+    controlDiv.appendChild(randomizeBtn);
+    controlDiv.appendChild(startBtn);
+    container.appendChild(controlDiv);
+}
+
+// Initialize setup, controls, and initial render
+setupGame();
+setupPlacementControls();
+renderBoards();
 
 export { setupGame, renderBoards };
